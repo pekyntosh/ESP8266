@@ -11,15 +11,14 @@ extern "C" {
   #include "user_interface.h"
 }
 
-const byte SSIDS_SIZE = 6;
+const byte SSIDS_SIZE = 5;
 // max length 32 octect
 String SSIDs[SSIDS_SIZE] = {
                               "Spaghetti e mandolino",
                               "Free WiFi come in",
                               "TestWiFi",
                               "Ciao, sono purpetta",
-                              "Mi prude i culo",
-                              "DIEHANEEEEE"
+                              "SPAM*SPAM*SPAM"
                           };
 
 const byte CHANNEL_MIN = 1;
@@ -46,10 +45,12 @@ const uint8_t frame_head[FRAME_HEAD_SIZE] = {
                         0x00, 0x00,
                   // 4-9 (6): RA (receiver address / destination address), layer-2 broadcast
                         0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                        
                   // 10-15 (6): source address
-                        0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                   // 16-21 (6): BSSID
-                        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 
+                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+                        
                   // 22-23 (2): sequence control (4 bit: fragment number; 12 bit: sequence number, al suo incremento ci pensa wifi_send_pkt_freedom())
                         0xc0, 0x6c,
 
@@ -108,6 +109,11 @@ int frame_composer() {
     frame[k] = 0;
   }
 
+// copio la prima parte del prototipo del frame
+  for (k = 0; k < FRAME_HEAD_SIZE; k++) {
+    frame[k] = frame_head[k];
+  }
+
 /*
  * Frames are created by the server, so the server’s MAC address is the source address for frames. 
  * When frames are relayed through the access point, the access point uses its wireless interface as the transmitter address.
@@ -121,11 +127,6 @@ int frame_composer() {
   frame[14] = frame[20] = random(256);
   frame[15] = frame[21] = random(256);
 
-// copio la prima parte del prototipo del frame
-  for (k = 0; k < FRAME_HEAD_SIZE; k++) {
-    frame[k] = frame_head[k];
-  }
-
 // estrae l'SSID dal vettore SSIDs
   String SSID = SSIDs[SSIDs_index];
 // length() restituisce un unsigned int
@@ -133,7 +134,7 @@ int frame_composer() {
 // imposta la lunghezza della stringa all'interno del frame, offset 37
   frame[37] = (uint8_t) SSID_length;
 
-  Serial.println("publishing SSID: " + SSID + " (length: " + SSID_length + ")");
+  Serial.println("\n\n\npublishing SSID: " + SSID + " (length: " + SSID_length + ")");
   
 // estrae ciascun carattere dall'SSID e lo imposta nel frame vector in forma incrementale a partire dall'indice 38
   for (k = 38, j = 0; j < SSID_length; k++, j++) {
@@ -149,13 +150,13 @@ int frame_composer() {
 //    Serial.println((String) frame_foot[j] + " in posizione " + (String) + k);
   }
 
-  Serial.println("\n\n\nframe length: " + (String) k + "\n\n\n");
+//  Serial.println("\nframe length: " + (String) k + "\n");
 
   k--;
   frame[k] = (uint8_t) channel;
   k++;
 
-  print_frame(k);
+//  print_frame(k);
 
 // frame length
   return k;
@@ -172,18 +173,18 @@ void print_frame(int frame_length) {
 }
 
 void channel_gen() {
-  Serial.println("channel_gen()");
+//  Serial.println("channel_gen()");
   
 // remember: processing random() != ANSI c random()
-// generate random channel
-  byte channel = random(CHANNEL_MIN, CHANNEL_MAX);
+// generate random channel (sets global variable)
+  channel = random(CHANNEL_MIN, CHANNEL_MAX);
   wifi_set_channel(channel);
   
-  Serial.println("channel: " + (String) channel);
+//  Serial.println("channel: " + (String) channel);
 }
 
 void loop() {
-  Serial.println("loop()");
+//  Serial.println("loop()");
 
   channel_gen();
   int frame_length = frame_composer();
@@ -206,5 +207,5 @@ Return: 0, succeed; -1, fail.
     SSIDs_index = 0;
   }
 
-  delay(1);
+  delay(10);
 }
